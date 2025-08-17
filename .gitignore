@@ -5,3 +5,8 @@ scroll.sh
 push.sh
 scroll.sh
 *.sh
+*.sh
+*.log
+*.tmp
+*.swp
+*~

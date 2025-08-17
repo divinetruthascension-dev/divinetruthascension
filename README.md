@@ -1,1 +1,1 @@
-# divinetruthascension
+# Divine Truth Ascension Platform

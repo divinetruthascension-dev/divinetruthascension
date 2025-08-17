@@ -1,1 +1,1 @@
-# Divine Truth Ascension Scrolls
+# Scrolls

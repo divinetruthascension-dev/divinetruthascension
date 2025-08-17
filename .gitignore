@@ -1,4 +1,10 @@
-push.sh
+# Ignore editor backups
+*~
+*.swp
+*.swo
+*.bak
+*.tmp
+*.#push.sh
 scroll.sh
 push.sh
 scroll.sh

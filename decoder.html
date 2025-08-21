@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Symbol Decoder</title>
+  <style>
+    body {
+      background: radial-gradient(circle at center, #0a0015, #000);
+      color: #f0eaff;
+      font-family: "Segoe UI", sans-serif;
+      text-align: center;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 1.8em;
+      color: #cbb5ff;
+      text-shadow: 0 0 15px violet, 0 0 30px indigo;
+    }
+    textarea {
+      width: 80%;
+      height: 120px;
+      margin: 20px auto;
+      padding: 10px;
+      border-radius: 12px;
+      border: none;
+      background: rgba(255,255,255,0.05);
+      color: #fff;
+      font-size: 1em;
+      text-shadow: 0 0 6px #fff;
+      outline: none;
+    }
+    button {
+      background: linear-gradient(90deg, violet, indigo);
+      border: none;
+      padding: 12px 28px;
+      border-radius: 25px;
+      font-size: 1em;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: 0 0 15px violet, 0 0 25px indigo;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 25px violet, 0 0 45px indigo;
+    }
+    .output {
+      margin-top: 30px;
+      font-size: 1.2em;
+      color: #ffeaff;
+      text-shadow: 0 0 12px #ffb7ff, 0 0 25px violet;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔑 Symbol Decoder 🔑</h1>
+  <p>Enter a coded message below to reveal its truth.</p>
+
+  <textarea id="encoded" placeholder="Paste encoded text here..."></textarea><br>
+  <button onclick="decodeMessage()">Decode</button>
+
+  <div class="output" id="output"></div>
+
+  <script>
+    function decodeMessage() {
+      let encoded = document.getElementById("encoded").value.trim();
+      try {
+        let decoded = atob(encoded);
+        document.getElementById("output").innerHTML = decoded;
+      } catch (e) {
+        document.getElementById("output").innerHTML = "⚠️ Invalid code or not aligned.";
+      }
+    }
+  </script>
+</body>
+</html>

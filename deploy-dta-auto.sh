@@ -1,92 +1,106 @@
-chmod +x deploy-dta-auto.sh  # Make executable
-./deploy-dta-auto.sh         # Run fully automated#!/data/data/com.termux/files/usr/bin/bash
-# 🚀 DivineTruthAscension Auto Deploy + SSH + GitHub API
-# Fully automated Termux script, mobile-friendly
+#!/bin/bash
+# ----------------------------------------
+# 🔹 DivineTruthAscension Auto Deploy (Termux)
+# Detects GitHub auth method (SSH / HTTPS with PAT)
+# Uses Netlify auth token for deployment
+# ----------------------------------------
 
-# --- 1. Variables ---
-REPO_URL=https://github.com/settings/keys
-https://github.com/settings/keys:divinetruthascension-dev/DivineTruthAscension.git"  # Update
-BRANCH="main"
+set -e
+
 PROJECT_DIR="$HOME/divinetruthascension"
-LOG_DIR="$PROJECT_DIR/npm-logs"
-SSH_KEY="$HOME/.ssh/id_rsa.pub"
-GITHUB_TOKEN=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"YOUR_GITHUB_PERSONAL_ACCESS_TOKEN"  # Must have repo + admin:public_key
+LOG_FILE="$PROJECT_DIR/deploy.log"
 
-# --- 2. Ensure directories ---
-mkdir -p "$PROJECT_DIR"
-mkdir -p "$LOG_DIR"
-cd "$PROJECT_DIR" || exit 1
+echo "🌟 Starting auto deploy for DivineTruthAscension..." | tee "$LOG_FILE"
 
-# --- 3. Git setup ---
-if [ ! -d ".git" ]; then
-  echo "📂 Initializing Git repository..."
-  git init
-  git remote add origin "$REPO_URL"
-fi
+cd "$PROJECT_DIR"
 
-# --- 4. Node.js LTS & Netlify CLI locally ---
-if ! command -v node >/dev/null 2>&1; then
-  echo "⬇️ Installing Node.js LTS..."
-  pkg install -y nodejs-lts
-fi
-
-if ! command -v netlify >/dev/null 2>&1; then
-  echo "⬇️ Installing Netlify CLI locally..."
-  npm install netlify-cli --prefix "$PROJECT_DIR/node_modules"
-  export PATH="$PROJECT_DIR/node_modules/.bin:$PATH"
-fi
-
-# --- 5. SSH Key Setup ---
-if [ ! -f "$SSH_KEY" ]; then
-  echo "🔑 Generating SSH key..."
-  ssh-keygen -t rsa -b 4096 -f "$HOME/.ssh/id_rsa" -N ""
+# ------------------------
+# 1️⃣ Ensure Node.js LTS
+# ------------------------
+if ! command -v node &> /dev/null; then
+    echo "⚡ Node.js not found. Installing Node.js LTS..." | tee -a "$LOG_FILE"
+    pkg install -y nodejs-lts
 else
-  echo "✅ SSH key already exists."
+    echo "✅ Node.js is installed." | tee -a "$LOG_FILE"
 fi
 
-PUB_KEY=$(catssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIITl769lUznNp7R945wMCcxnSyQZyqRamOcQVg1zufzo )
-
-# --- 6. Add SSH key to GitHub automatically ---
-echo "🔗 Adding SSH key to GitHub via API..."
-API_RESPONSE=$(curl -s -X POST -H "Authorization: token $GITHUB_TOKEN" \
-  -H "Accept: application/vnd.github+json" \
-  https://api.github.com/user/keys \
-  -d "{\"title\": \"Termux-DTA-$(date +%s)\", \"key\": \"$PUB_KEY\"}")
-
-if echo "$API_RESPONSE" | grep -q "key"; then
-  echo "✅ SSH key added successfully to GitHub."
+# ------------------------
+# 2️⃣ Detect GitHub auth method
+# ------------------------
+GIT_SSH_TEST=$(ssh -T git@github.com 2>&1)
+if echo "$GIT_SSH_TEST" | grep -q "successfully authenticated"; then
+    echo "🔑 Using SSH for GitHub" | tee -a "$LOG_FILE"
+    GIT_REMOTE_URL="git@github.com:divinetruthascension-dev/DivineTruthAscension.git"
 else
-  echo "⚠️ Failed to add SSH key. Response: $API_RESPONSE"
+    if [ -z "$GITHUB_PAT" ]; then
+        echo "❌ GitHub PAT not set and SSH failed!" | tee -a "$LOG_FILE"
+        exit 1
+    fi
+    echo "🔑 Using HTTPS PAT for GitHub" | tee -a "$LOG_FILE"
+    GIT_REMOTE_URL="https://$GITHUB_PAT@github.com/divinetruthascension-dev/DivineTruthAscension.git"
 fi
 
-# --- 7. Netlify login and deploy ---
-if ! netlify status >/dev/null 2>&1; then
-  netlify logout
-  netlify login
+git remote set-url origin "$GIT_REMOTE_URL"
+
+# ------------------------
+# 3️⃣ Git sync
+# ------------------------
+echo "🌿 Syncing Git repository..." | tee -a "$LOG_FILE"
+git add -A
+git commit -m "Auto deploy commit" || echo "ℹ️ No changes to commit"
+git pull --rebase || echo "ℹ️ Pull skipped"
+git push || echo "ℹ️ Push skipped"
+
+# ------------------------
+# 4️⃣ Install npm dependencies
+# ------------------------
+if [ -f package.json ]; then
+    echo "📦 Installing npm dependencies..." | tee -a "$LOG_FILE"
+    npm install | tee -a "$LOG_FILE"
+else
+    echo "⚠️ package.json not found. Skipping npm install." | tee -a "$LOG_FILE"
 fi
 
-SITE_INFO=$(netlify sites:list --json 2>/dev/null)
-if [ -z "$SITE_INFO" ]; then
-  echo "⚠️ No Netlify sites found. Please create a site first."
-  exit 1
+# ------------------------
+# 5️⃣ Ensure public/index.html exists
+# ------------------------
+mkdir -p public
+if [ ! -f public/index.html ]; then
+cat <<EOL > public/index.html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Divine Truth Ascension</title>
+</head>
+<body>
+<h1>Welcome to Divine Truth Ascension</h1>
+</body>
+</html>
+EOL
+echo "✅ Created public/index.html" | tee -a "$LOG_FILE"
 fi
 
-SITE_ID=$(echo "$SITE_INFO" | grep -oP '"id":\s*"\K[^"]+' | head -n 1)
-PUBLIC_FOLDER="$PROJECT_DIR"
-echo "🌐 Deploying to Netlify Site ID: $SITE_ID from folder: $PUBLIC_FOLDER"
-
-# --- 8. Git add/commit/push ---
-git add .
-git commit -m "Auto-commit before Netlify deploy" || echo "⚠️ Nothing to commit."
-git push -u origin "$BRANCH"
-
-# --- 9. Deploy ---
-netlify deploy --prod --dir="$PUBLIC_FOLDER" --site="$SITE_ID"
-
-# --- 10. Latest npm log ---
-LATEST_LOG=$(ls -t "$LOG_DIR" 2>/dev/null | head -n 1)
-if [ -n "$LATEST_LOG" ]; then
-  tail -n 50 "$LOG_DIR/$LATEST_LOG"
+# ------------------------
+# 6️⃣ Build project if npm build exists
+# ------------------------
+if npm run | grep -q "build"; then
+    echo "🔨 Running npm build..." | tee -a "$LOG_FILE"
+    npm run build | tee -a "$LOG_FILE"
+else
+    echo "ℹ️ No build script found. Skipping build." | tee -a "$LOG_FILE"
 fi
 
-echo "✅ Full automation complete: SSH key, GitHub push, Netlify deploy!"
+# ------------------------
+# 7️⃣ Netlify deploy using NETLIFY_AUTH_TOKEN
+# ------------------------
+if [ -z "$NETLIFY_AUTH_TOKEN" ]; then
+    echo "❌ NETLIFY_AUTH_TOKEN environment variable not set!" | tee -a "$LOG_FILE"
+    exit 1
+fi
+
+echo "🚀 Deploying to Netlify..." | tee -a "$LOG_FILE"
+netlify deploy --prod --dir=public --auth="$NETLIFY_AUTH_TOKEN" | tee -a "$LOG_FILE"
+
+echo "🎉 Auto deployment complete! Logs saved to $LOG_FILE"

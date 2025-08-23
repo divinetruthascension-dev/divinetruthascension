@@ -1,0 +1,8 @@
+[build]
+  publish = "public" # This is the folder to deploy
+  command = ""      # Leave blank if no build command needed
+
+[dev]
+  command = "npx tailwindcss -i src/input.css -o public/output.css --watch"
+  port = 8888
+  publish = "public"

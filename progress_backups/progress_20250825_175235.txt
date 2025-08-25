@@ -21,8 +21,3 @@ Description:
 Type: [FEATURE/BUGFIX/DOC/OTHER]
 Description: 
 ----------------------------------------
-----------------------------------------
-[2025-08-25 17:52:35] Daily entry:
-Type: [FEATURE/BUGFIX/DOC/OTHER]
-Description: 
-----------------------------------------

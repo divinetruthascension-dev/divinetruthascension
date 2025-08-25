@@ -11,8 +11,3 @@
 Type: [FEATURE/BUGFIX/DOC/OTHER]
 Description: 
 ----------------------------------------
-----------------------------------------
-[2025-08-25 17:49:09] Daily entry:
-Type: [FEATURE/BUGFIX/DOC/OTHER]
-Description: 
-----------------------------------------

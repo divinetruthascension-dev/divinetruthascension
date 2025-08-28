@@ -1,20 +1,24 @@
-#!/bin/bash
+#!/data/data/com.termux/files/usr/bin/bash
+# Simple server launcher for Termux
 
-# PWA folder
-PWA_DIR=~/divinetruthascension
 PORTS=(9000 9100 9200 9300 9400)
-
-cd $PWA_DIR || { echo "[✖] Directory not found: $PWA_DIR"; exit 1; }
+SERVER_CMD="python3 -m http.server"
 
 for PORT in "${PORTS[@]}"; do
-    # Try to start server in background quietly
-    nohup python3 -m http.server $PORT &>/dev/null &
-    sleep 1
-    # Check if server started
-    if lsof -i :$PORT | grep python3 >/dev/null; then
-        echo "[✔] Server running at http://localhost:$PORT"
+    echo "Trying port $PORT..."
+    $SERVER_CMD $PORT >/dev/null 2>&1 &
+    PID=$!
+
+    # wait a second to see if server stays up
+    sleep 2
+    if ps -p $PID >/dev/null 2>&1; then
+        echo "✅ Server started on http://localhost:$PORT"
+        wait $PID
         exit 0
+    else
+        echo "❌ Port $PORT failed, trying next..."
     fi
 done
 
 echo "[✖] Server failed to start on all tried ports: ${PORTS[*]}"
+exit 1

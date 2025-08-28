@@ -1,2 +1,21 @@
-# Local Netlify folder
+# Node / build outputs
+dist/
+node_modules/
+
+# Logs
+*.log
+nohup.out
+
+# PID files
+*.pid
+
+# Backups
+divinetruthascension-backups/
+
+# System files
+.DS_Store
+*.swp
+
+# Env files (if you ever add them)
+.env# Local Netlify folder
 .netlify

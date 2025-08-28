@@ -1,6 +1,13 @@
 [build]
-  publish = "public"
-  command = ""
+  publish = "dist"     # Netlify will deploy files from /dist
+  command = ""         # No build step needed (static site)
 
-[[plugins]]
-package = "netlify-plugin-checklinks"
+[build.environment]
+  NODE_VERSION = "18"
+
+# Redirect all routes to index.html (for SPAs or deep linking)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+

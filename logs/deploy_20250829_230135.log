@@ -1,0 +1,24 @@
+===============================
+   Termux Git + Netlify Deploy
+===============================
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 1. Parse optional argument
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  DEPLOY_MODE="prod"
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  if [ "$1" == "preview" ]; then
+[?2004l[?2004h>   DEPLOY_MODE="draft"
+[?2004l[?2004h>   echo "⚠️ Preview mode: deploying to Netlify draft URL"
+[?2004l[?2004h> else
+[?2004l[?2004h>   echo "✅ Production deploy mode"
+[?2004l[?2004h> fi
+[?2004l✅ Production deploy mode
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 2. Install essential build tools
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  echo "📦 Installing Termux build-essential packages..."
+[?2004l📦 Installing Termux build-essential packages...
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  pkg install -y clang make python git nodejs-lts build-essential pkg-config > /dev/null 2>&1 || echo "⚠️ Some packages may already be installed"
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [K[A[K[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [K[A[K[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  chmod +x git_deploy_termux_full_log.sh
+[?2004lchmod: cannot access 'git_deploy_termux_full_log.sh': No such file or directory

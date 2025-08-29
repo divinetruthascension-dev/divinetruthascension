@@ -1,0 +1,59 @@
+===============================
+   Termux Git + Netlify Deploy
+===============================
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 2. Parse optional argument
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  DEPLOY_MODE="prod"
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  if [ "$1" == "preview" ]; then
+[?2004l[?2004h>   DEPLOY_MODE="draft"
+[?2004l[?2004h>   echo "⚠️ Preview mode: deploying to Netlify draft URL"
+[?2004l[?2004h> else
+[?2004l[?2004h>   echo "✅ Production deploy mode"
+[?2004l[?2004h> fi
+[?2004l✅ Production deploy mode
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 3. Install essential build tools
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  echo "📦 Installing Termux build-essential packages..."
+[?2004l📦 Installing Termux build-essential packages...
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  pkg install -y clang make python git nodejs-lts build-essential pkg-config > /dev/null 2>&1 || echo "⚠️ Some packages may already be installed"
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 4. Check Git installation
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  if ! command -v git &> /dev/null; then
+[?2004l[?2004h>     echo "❌ Git not installed. Run: pkg install git"
+[?2004l[?2004h>     exit 1
+[?2004l[?2004h> fi
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 5. Check Netlify CLI installation
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  if ! command -v netlify &> /dev/null; then
+[?2004l[?2004h>     echo "❌ Netlify CLI not installed. Run: npm install -g netlify-cli"
+[?2004l[?2004h>     exit 1
+[?2004l[?2004h> fi
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 6. Current branch
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  CURRENT_BRANCH=$(git branch --show-current)
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  echo "🌿 Current branch: $CURRENT_BRANCH"
+[?2004l🌿 Current branch: main
+[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  [A[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[C[K 
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # 7. Auto-commit uncommitted changes
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  # -----------------------------
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  UNCOMMITTED=$(git status --porcelain)
+[?2004l[?2004h[0;32m~/divinetruthascension/divinetruthascension[0m [0;97m$[0m  if [ -n "$UNCOMMITTED" ]; then
+[?2004l[?2004h>     echo "⚠️ Uncommitted changes detected, auto-committing..."
+[?2004l[?2004h>     git add .
+[?2004l[?2004h>     git commit -m "Auto-commit by Termux Git + Netlify Deploy" > /dev/null 2>&1
+[?2004l[?2004h>     echo "✅ Changes committed"
+[?2004l[?2004h> else
+[?2004l[?2004h>     echo "✅ No uncommitted changes"
+[?2004l[?2004h> fi
+[?2004l⚠️ Uncommitted changes detected, auto-committing...

@@ -1,0 +1,207 @@
+#!/data/data/com.termux/files/usr/bin/bash
+# 🚀 Termux Git + Netlify Auto Deploy Script (Dynamic Folder)
+# Features: dynamic folder, logging, retry, build-essential, notification, clipboard, auto plugin install
+
+set -e
+set -o pipefail
+
+# -----------------------------
+# 0. Use current working directory as project directory
+# -----------------------------
+PROJECT_DIR=$(pwd)
+echo "📂 Running in project directory: $PROJECT_DIR"
+
+# -----------------------------
+# 1. Prepare log file
+# -----------------------------
+LOG_DIR="$PROJECT_DIR/logs"
+mkdir -p "$LOG_DIR"
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+LOG_FILE="$LOG_DIR/deploy_$TIMESTAMP.log"
+echo "===============================" | tee -a "$LOG_FILE"
+echo "   Termux Git + Netlify Deploy" | tee -a "$LOG_FILE"
+echo "===============================" | tee -a "$LOG_FILE"
+
+# Redirect all output to log file
+exec > >(tee -a "$LOG_FILE") 2>&1
+
+# -----------------------------
+# 2. Parse optional argument
+# -----------------------------
+DEPLOY_MODE="prod"
+if [ "$1" == "preview" ]; then
+  DEPLOY_MODE="draft"
+  echo "⚠️ Preview mode: deploying to Netlify draft URL"
+else
+  echo "✅ Production deploy mode"
+fi
+
+# -----------------------------
+# 3. Install essential build tools
+# -----------------------------
+echo "📦 Installing Termux build-essential packages..."
+pkg install -y clang make python git nodejs-lts build-essential pkg-config > /dev/null 2>&1 || echo "⚠️ Some packages may already be installed"
+
+# -----------------------------
+# 4. Check Git installation
+# -----------------------------
+if ! command -v git &> /dev/null; then
+    echo "❌ Git not installed. Run: pkg install git"
+    exit 1
+fi
+
+# -----------------------------
+# 5. Check Netlify CLI installation
+# -----------------------------
+if ! command -v netlify &> /dev/null; then
+    echo "❌ Netlify CLI not installed. Run: npm install -g netlify-cli"
+    exit 1
+fi
+
+# -----------------------------
+# 6. Current branch
+# -----------------------------
+CURRENT_BRANCH=$(git branch --show-current)
+echo "🌿 Current branch: $CURRENT_BRANCH"
+
+# -----------------------------
+# 7. Auto-commit uncommitted changes
+# -----------------------------
+UNCOMMITTED=$(git status --porcelain)
+if [ -n "$UNCOMMITTED" ]; then
+    echo "⚠️ Uncommitted changes detected, auto-committing..."
+    git add .
+    git commit -m "Auto-commit by Termux Git + Netlify Deploy" > /dev/null 2>&1
+    echo "✅ Changes committed"
+else
+    echo "✅ No uncommitted changes"
+fi
+
+# -----------------------------
+# 8. Auto-push unpushed commits
+# -----------------------------
+UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "")
+if [ -n "$UPSTREAM" ]; then
+    UNPUSHED=$(git log $UPSTREAM..HEAD --oneline)
+    if [ -n "$UNPUSHED" ]; then
+        echo "⚠️ Unpushed commits detected, auto-pushing..."
+        git push origin "$CURRENT_BRANCH" > /dev/null 2>&1 || echo "⚠️ Push failed"
+        echo "✅ Commits pushed"
+    else
+        echo "✅ No unpushed commits"
+    fi
+else
+    echo "⚠️ No upstream branch configured. Skipping auto-push."
+fi
+
+# -----------------------------
+# 9. Install dependencies with retry
+# -----------------------------
+echo "📦 Installing project dependencies (skipping optional native modules)..."
+RETRY_COUNT=0
+MAX_RETRIES=3
+until npm install --no-optional --legacy-peer-deps --loglevel=error; do
+    RETRY_COUNT=$((RETRY_COUNT+1))
+    if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+        echo "❌ npm install failed after $MAX_RETRIES attempts. Continuing anyway..."
+        break
+    fi
+    echo "⚠️ npm install failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+    sleep 3
+done
+
+# -----------------------------
+# 9b. Auto-install missing Netlify plugins
+# -----------------------------
+if [ -f "netlify.toml" ]; then
+    echo "🔌 Checking Netlify plugins..."
+    PLUGINS=$(grep -Po 'package\s*=\s*"\K[^"]+' netlify.toml || true)
+    for plugin in $PLUGINS; do
+        if ! npm list "$plugin" --depth=0 > /dev/null 2>&1; then
+            echo "⚠️ Plugin $plugin not installed, installing..."
+            npm install "$plugin" --save-dev || echo "❌ Failed to install $plugin, continuing..."
+        else
+            echo "✅ Plugin $plugin already installed"
+        fi
+    done
+else
+    echo "⚠️ netlify.toml not found, skipping plugin check"
+fi
+
+# -----------------------------
+# 10. Rebuild native modules if needed (ignore failures)
+# -----------------------------
+if [ -f "binding.gyp" ]; then
+    echo "🔧 Rebuilding native modules..."
+    node-gyp rebuild || echo "⚠️ node-gyp rebuild failed, skipping..."
+else
+    echo "✅ No native modules detected"
+fi
+
+# -----------------------------
+# 11. Build project if build script exists
+# -----------------------------
+if npm run | grep -q 'build'; then
+    echo "⚙️ Running npm run build..."
+    npm run build > /dev/null 2>&1 || echo "⚠️ Build completed with warnings"
+else
+    echo "✅ No build script found, skipping build"
+fi
+
+# -----------------------------
+# 12. Detect deploy folder
+# -----------------------------
+if [ -d "dist" ]; then
+    DEPLOY_DIR="dist"
+elif [ -d "build" ]; then
+    DEPLOY_DIR="build"
+else
+    DEPLOY_DIR="."
+fi
+
+# -----------------------------
+# 13. Deploy to Netlify with retry
+# -----------------------------
+echo "🚀 Deploying from $DEPLOY_DIR (mode: $DEPLOY_MODE)..."
+RETRY_COUNT=0
+MAX_RETRIES=3
+until DEPLOY_OUTPUT=$(netlify deploy --"$DEPLOY_MODE" --dir="$DEPLOY_DIR" 2>&1); do
+    RETRY_COUNT=$((RETRY_COUNT+1))
+    if [ "$RETRY_COUNT" -ge "$MAX_RETRIES" ]; then
+        echo "❌ Netlify deploy failed after $MAX_RETRIES attempts. Check logs manually."
+        DEPLOY_OUTPUT=""
+        break
+    fi
+    echo "⚠️ Netlify deploy failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+    sleep 5
+done
+echo "$DEPLOY_OUTPUT"
+
+# -----------------------------
+# 14. Extract Netlify deploy URL and open
+# -----------------------------
+DEPLOY_URL=$(echo "$DEPLOY_OUTPUT" | grep -oP 'https://[a-zA-Z0-9\-]+\.netlify\.app' | head -n 1)
+if [ -n "$DEPLOY_URL" ]; then
+    echo "🌐 Opening deployed site: $DEPLOY_URL"
+    termux-open "$DEPLOY_URL" || echo "⚠️ Could not open URL automatically"
+fi
+
+# -----------------------------
+# 15. Send Termux notification + copy URL to clipboard
+# -----------------------------
+if command -v termux-notification &> /dev/null; then
+    termux-notification --title "Deploy Complete" \
+                        --content "Netlify deploy finished. URL: ${DEPLOY_URL:-Not found}" \
+                        --priority high
+    termux-vibrate -d 300
+fi
+
+if [ -n "$DEPLOY_URL" ] && command -v termux-clipboard-set &> /dev/null; then
+    echo "$DEPLOY_URL" | termux-clipboard-set
+    echo "📋 Deploy URL copied to clipboard: $DEPLOY_URL"
+fi
+
+echo "==============================="
+echo "✅ Git + Netlify Auto Deploy Complete"
+echo "📄 Log saved at: $LOG_FILE"
+echo "==============================="

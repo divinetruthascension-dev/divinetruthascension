@@ -1,0 +1,51 @@
+name: "CodeQL + Netlify Deploy"
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * 0'
+
+jobs:
+  analyze:
+    name: Analyze JavaScript
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout repo
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: javascript
+          queries: security-and-quality
+
+      # 3. Perform CodeQL analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
+        with:
+          category: "/language:javascript"
+
+  deploy:
+    name: Deploy to Netlify
+    runs-on: ubuntu-latest
+    needs: analyze
+    if: github.ref == 'refs/heads/main'  # Only deploy on main branch
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Netlify CLI
+        run: npm install -g netlify-cli
+
+      - name: Deploy to Netlify
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ nfp_kYX8CpnGfBW2ka1mJ38fVeM9iV6WZoKw5aae }}
+          NETLIFY_SITE_ID: ${{ 7b18fe4a-bed2-4d6a-aa93-9f0ed93a41e8 }}
+        run: netlify deploy --prod --dir=.
